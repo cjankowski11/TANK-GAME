@@ -2,6 +2,10 @@ import pygame
 from menuInfo import MenuInfo
 from menuPage import MenuPage
 from playPage import PlayPage
+from settingsPage import SettingsPage
+from localLobbyPage import LocalLobbyPage
+from onlineLobbyPage import OnlineLobbyPage
+
 class MainMenu:
     def __init__(self):
         self.height = 450
@@ -14,20 +18,22 @@ class MainMenu:
         pygame.init()
         pages = {
             "MENU": MenuPage(),
-            "SETTINGS": "",
-            "PLAY": PlayPage()
+            "SETTINGS": SettingsPage(),
+            "PLAY": PlayPage(self.info),
+            "LOCAL_LOBBY": LocalLobbyPage(self.info),
+            "ONLINE_LOBBY": OnlineLobbyPage(self.info)
                  }
         currentpage = pages["MENU"]
         while self.running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
-                change = currentpage.is_page_changed(event)
-                if change == "QUIT":
+                new_page = currentpage.is_page_changed(event)
+                if new_page == "QUIT":
                     self.running = False
                     break
-                if change:
-                    currentpage = pages[change]
+                if new_page:
+                    currentpage = pages[new_page]
             self.screen.fill("purple")
             currentpage.draw_page(self.screen)
             pygame.display.update()

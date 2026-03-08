@@ -1,6 +1,7 @@
 from button import Button
 import random
 
+
 class PlayPage:
     def __init__(self, info):
         self.info = info
@@ -12,7 +13,6 @@ class PlayPage:
         self.back_button.draw(screen)
         self.local_button.draw(screen)
         self.online_button.draw(screen)
-
 
     def is_page_changed(self, event):
         if self.back_button.is_clicked(event):

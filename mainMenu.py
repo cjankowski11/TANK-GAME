@@ -34,8 +34,8 @@ class MainMenu:
                     break
                 if new_page:
                     currentpage = pages[new_page]
-                if self.info.online:
-                    currentpage.send_to_server_msg_that_i_exist()
+            # if self.info.online:
+            #     currentpage.send_to_server_msg_that_i_exist()
             self.screen.fill("purple")
             currentpage.draw_page(self.screen)
             pygame.display.update()

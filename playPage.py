@@ -1,5 +1,5 @@
 from button import Button
-
+import random
 
 class PlayPage:
     def __init__(self, info):
@@ -13,6 +13,7 @@ class PlayPage:
         self.local_button.draw(screen)
         self.online_button.draw(screen)
 
+
     def is_page_changed(self, event):
         if self.back_button.is_clicked(event):
             return "MENU"
@@ -21,5 +22,10 @@ class PlayPage:
             return "LOCAL_LOBBY"
         if self.online_button.is_clicked(event):
             self.info.online = True
+            name = self.get_user_name()
+            self.info.name = name
             return "ONLINE_LOBBY"
         return None
+
+    def get_user_name(self):
+        return f"Player {random.randint(1000, 10000)}"

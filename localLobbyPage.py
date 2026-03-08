@@ -25,6 +25,8 @@ class LocalLobbyPage:
 
         self.bot_text = Text("BOTS", 550, 245)
 
+        self.play_buton = Button("PLAY", 400, 100, 300, 100, (50, 50, 200), (80, 80, 250), 50)
+
     def draw_page(self, screen):
         self.back_button.draw(screen)
         self.add_player_button.draw(screen)
@@ -33,6 +35,7 @@ class LocalLobbyPage:
         self.subtract_bot.draw(screen)
         self.player_text.draw(screen)
         self.bot_text.draw(screen)
+        self.play_buton.draw(screen)
 
     def is_page_changed(self, event):
         if self.back_button.is_clicked(event):
@@ -57,3 +60,7 @@ class LocalLobbyPage:
             self.info.number_of_bots -= 1
             print(f"players {self.info.number_of_players}")
             print(f"bots {self.info.number_of_bots}")
+
+        if self.play_buton.is_clicked(event):
+            self.info.play = True
+            return "QUIT"

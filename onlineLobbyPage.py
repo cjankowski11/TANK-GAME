@@ -4,16 +4,17 @@ import struct
 import threading
 import time
 
+
 class OnlineLobbyPage:
 
     def __init__(self, info):
         self.info = info
         self.back_button = Button("BACK", 100, 100, 100, 100, (50, 50, 200), (80, 80, 250), 30)
-        self.host = "127.0.0.1"
+        self.host = ""
         self.port = 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, True)
-        self.socket.bind((self.host, self.port))
+        # self.socket.bind((self.host, self.port))
         # threading.Thread(target=self.recive).start()
         threading.Thread(target=self.send_to_server_msg_that_i_exist, daemon=True).start()
 

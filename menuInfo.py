@@ -7,3 +7,4 @@ class MenuInfo:
         self.max_players = 4
         self.number_of_bots = 0
         self.name = None
+        self.running = True

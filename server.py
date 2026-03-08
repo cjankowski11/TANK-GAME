@@ -21,12 +21,12 @@ class Server:
     def handle_data(self, data, addr):
         try:
             if len(data):
-                # data = struct.unpack_from("ff", data, 0)
-                print(data)
                 msg_type = struct.unpack("B", data[:1])[0]
                 if msg_type == 1:
-                    msg = struct.unpack("20s", data[1:])[0]
+                    msg = struct.unpack("20s", data[1:])[0].decode()
                     print(msg)
+                    self.players[addr] = (msg, time.time())
+                    print(self.players)
                 # decoded_data = data.decode()
                 # print(decoded_data)
                 # for player in self.players:
@@ -51,14 +51,15 @@ class Server:
         self.thread_count += 1
         while not self.kill:
             if self.players:
-                for addr in list(self.players.keys()):
-                    for _, name in self.players.items():
-                        packet = struct.pack("B20s", 1, name.encode())
-                        try:
-                            self.socket.sendto(packet, addr)
-                        except Exception as e:
-                            print(e)
-            time.sleep(1)
+                self.delete_not_active()
+                # for addr in list(self.players.keys()):
+                    
+                #    
+                #     try:
+                #         self.socket.sendto(packet, addr)
+                #     except Exception as e:
+                #         print(e)
+            time.sleep(2)
         self.thread_count -= 1
 
     def await_kill(self):
@@ -69,7 +70,7 @@ class Server:
 
     def run(self):
         threading.Thread(target=self.listen_loop).start()
-        # threading.Thread(target=self.broadcasting).start()
+        threading.Thread(target=self.broadcasting).start()
         try:
             while True:
                 time.sleep(0.05)
@@ -77,6 +78,16 @@ class Server:
         except KeyboardInterrupt:
             self.await_kill()
 
+    
+    def delete_not_active(self):
+        addr_to_delete = []
+        for addr, data in self.players.items():
+            if time.time() - data[1] > 3:
+                print(f"{data[0]} disconnected")
+                addr_to_delete.append(addr)
+        for addr in addr_to_delete:
+            self.players.pop(addr)
 
-server = Server("127.0.0.1", )
+
+server = Server("", )
 server.run()

@@ -14,8 +14,9 @@ class OnlineLobbyPage:
         self.port = 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, True)
+        self.socket.settimeout(1)
         # self.socket.bind((self.host, self.port))
-        # threading.Thread(target=self.recive).start()
+        threading.Thread(target=self.recive, daemon=True).start()
         threading.Thread(target=self.send_to_server_msg_that_i_exist, daemon=True).start()
 
     def draw_page(self, screen):
@@ -41,7 +42,10 @@ class OnlineLobbyPage:
             while self.info.online:
                 try:
                     msg, _ = self.socket.recvfrom(2048)
-                    print(msg)
+                    msg.decode()
+                except socket.timeout:
+                    continue
                 except Exception as e:
                     print(e)
+
                 time.sleep(1)

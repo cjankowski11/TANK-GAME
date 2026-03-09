@@ -26,11 +26,8 @@ class Server:
                     msg = struct.unpack("20s", data[1:])[0].decode()
                     print(msg)
                     self.players[addr] = (msg, time.time())
-                    print(self.players)
-                # decoded_data = data.decode()
-                # print(decoded_data)
-                # for player in self.players:
-                #     socket.sendto(data, player)
+                    # print(self.players)
+
         except Exception as e:
             print(f"error {e}")
 
@@ -44,6 +41,8 @@ class Server:
                 self.handle_data(data, addr)
             except socket.timeout:
                 continue
+            except Exception as e:
+                print(e)
             time.sleep(0.01)
         self.thread_count -= 1
 
@@ -52,13 +51,14 @@ class Server:
         while not self.kill:
             if self.players:
                 self.delete_not_active()
-                # for addr in list(self.players.keys()):
-                    
-                #    
-                #     try:
-                #         self.socket.sendto(packet, addr)
-                #     except Exception as e:
-                #         print(e)
+                names = [value[0] for value in self.players.values()]
+                msg = ",".join(names).encode('utf-8')
+                for addr in list(self.players.keys()):
+                    try:
+                        self.socket.sendto(msg, addr)
+                        self.socket.sendto(struct.pack("B80s", 1, msg), addr)
+                    except Exception as e:
+                        print(e)
             time.sleep(2)
         self.thread_count -= 1
 

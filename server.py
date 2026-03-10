@@ -24,20 +24,25 @@ class Server:
         try:
             if len(data):
                 msg_type = struct.unpack("B", data[:1])[0]
+                if addr in self.players:
+                    self.players[addr]["time"] = time.time()
                 with self.lock:
                     if msg_type == 1:
-                        msg = struct.unpack("20s", data[1:])[0].decode()
-                        print(msg)
-                        if self.get_players_number() + self.bots_number < 4:
-                            self.players[addr] = (msg, time.time())
+                        ready, name = struct.unpack("?20s", data[1:])
+                        all_players = self.get_players_number() + self.bots_number
+                        if all_players < 4 or addr in self.players:
+                            self.players[addr] = {"name": name.decode(),
+                                                  "time": time.time(),
+                                                  "ready": ready}
+
                         # print(self.players)
                     if msg_type == 2:
-                        print("add bot")
+                        # print("add bot")
                         if self.bots_number + self.get_players_number() < 4:
                             self.bots_number += 1
                     
                     if msg_type == 3:
-                        print("sub bot")
+                        # print("sub bot")
                         if self.bots_number > 0:
                             self.bots_number -= 1
 
@@ -59,21 +64,22 @@ class Server:
             time.sleep(0.01)
         self.thread_count -= 1
 
-    def broadcasting(self):   # TO DO
+    def broadcasting(self):  
         self.thread_count += 1
         while not self.kill:
             if self.players:
                 with self.lock:
                     self.delete_not_active()
-                    names = [value[0] for value in self.players.values()]
-                msg = ",".join(names).encode('utf-8')
+                    buffor = struct.pack("BB", len(self.players), self.bots_number)
+                    for value in self.players.values():
+                        buffor += struct.pack("?20s", value["ready"], (value["name"]).encode())
+
                 for addr in list(self.players.keys()):
                     try:
-                        # self.socket.sendto(msg, addr)
-                        self.socket.sendto(struct.pack(f"BB{len(names)}", 1, self.bots_number, msg), addr)
+                        self.socket.sendto(buffor, addr)
                     except Exception as e:
                         print(e)
-            time.sleep(2)
+            time.sleep(0.1)
         self.thread_count -= 1
 
     def await_kill(self):
@@ -96,8 +102,8 @@ class Server:
     def delete_not_active(self):
         addr_to_delete = []
         for addr, data in self.players.items():
-            if time.time() - data[1] > 3:
-                print(f"{data[0]} disconnected")
+            if time.time() - self.players[addr]["time"] > 5:
+                print(f"{self.players[addr]["name"]} disconnected")
                 addr_to_delete.append(addr)
         for addr in addr_to_delete:
             self.players.pop(addr)
@@ -105,5 +111,5 @@ class Server:
     def get_players_number(self):
         return len(self.players.keys())
 
-server = Server("", )
+server = Server("")
 server.run()

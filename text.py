@@ -6,12 +6,20 @@ class Text:
         self.pos = (x, y)
         self.font = pygame.font.Font(f"graphics/font/{font_name}", font_size)
         self.color = color
+        self.text = text
         self.text_surf = self.font.render(text, True, color)
-        self.visible = True
     
     def draw(self, screen):
-        if self.visible:
-            screen.blit(self.text_surf, self.pos)
+        screen.blit(self.text_surf, self.pos)
 
     def change_text(self, new_text):
+        self.text = new_text
         self.text_surf = self.font.render(new_text, True, self.color)
+    
+    def change_color(self, new_color):
+        self.color = new_color
+        self.text_surf = self.font.render(self.text, True, new_color)
+    
+    def change_to_sysfont(self, font, font_size):
+        self.font = pygame.font.SysFont(font, font_size)
+        self.text_surf = self.font.render(self.text, True, self.color)

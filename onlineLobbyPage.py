@@ -11,9 +11,13 @@ class OnlineLobbyPage:
     def __init__(self, info):
         self.info = info
         self.back_button = Button("BACK", 100, 100, 100, 100, (50, 50, 200), (80, 80, 250), 30)
-        self.players_name_text = [Text("", 300, 200), Text("", 300, 245)
-                                  , Text("", 300, 290), Text("", 300, 335)]
+        self.players_name_text = [Text("", 300, 150), Text("", 300, 195)
+                                  , Text("", 300, 240), Text("", 300, 295)]
+        for text in self.players_name_text:
+            text.change_to_sysfont("arial", 30)
+        
         self.names = []
+        self.is_ready = []
         self.host = ""
         self.port = 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -27,15 +31,21 @@ class OnlineLobbyPage:
         sub_bot.change_to_sysfont("arial", 50)
         self.subtract_bot_button = sub_bot
 
+        self.ready_button = Button("READY", 50, 340, 300, 100, (50, 50, 200), (80, 80, 250), 50)
+        self.start_button = Button("START", 450, 340, 300, 100, (50, 50, 200), (80, 80, 250), 50)
+
         # self.socket.bind((self.host, self.port))
         threading.Thread(target=self.recive, daemon=True).start()
         threading.Thread(target=self.send_to_server_msg_that_i_exist, daemon=True).start()
+        self.ready = False
 
     def draw_page(self, screen):
         self.back_button.draw(screen)
         self.add_bot_button.draw(screen)
         self.subtract_bot_button.draw(screen)
         self.bot_text.draw(screen)
+        self.ready_button.draw(screen)
+        self.start_button.draw(screen)
         for player_name in self.players_name_text:
             player_name.draw(screen)
 
@@ -43,35 +53,62 @@ class OnlineLobbyPage:
     def is_page_changed(self, event):
         if self.back_button.is_clicked(event):
             self.info.online = None
+            self.ready = False
             return "PLAY"
         if self.add_bot_button.is_clicked(event):
             self.socket.sendto(struct.pack("B", 2), (self.host, self.port))
         if self.subtract_bot_button.is_clicked(event):
             self.socket.sendto(struct.pack("B", 3), (self.host, self.port))
+        if self.ready_button.is_clicked(event):
+            self.ready = not self.ready
+        if self.start_button.is_clicked(event):
+            pass
+            # start the game
     
     def send_to_server_msg_that_i_exist(self):
         while True:
             while self.info.online:
                 try:
-                    self.socket.sendto(struct.pack("B20s", 1, self.info.name.encode()), (self.host, self.port))
+                    self.socket.sendto(struct.pack("B?20s", 1, self.ready, self.info.name.encode()), (self.host, self.port))
                 except Exception as e:
                     print(e)
-                time.sleep(1)
+                time.sleep(0.1)
 
     def recive(self):
         while True:
             while self.info.online:
                 try:
                     msg, _ = self.socket.recvfrom(2048)
-                    names = msg.decode('utf-8').split(',')
-                    self.names = [name.strip('\x00') for name in names]
-                    for i in range(len(self.names)):
-                        self.players_name_text[i].change_text(self.names[i])
-                    for i in range(len(self.names), self.info.max_players):
-                        self.players_name_text[i].change_text("")
+                    num_players, num_bots = struct.unpack("BB", msg[:2])
+                    msg = msg[2:]
+                    self.info.number_of_bots = num_bots
+                    self.names = []
+                    self.is_ready = []
+                    for _ in range(num_players):
+                        is_ready, name = struct.unpack("?20s", msg[:21])
+                        name = name.decode().rstrip("\x00")
+                        self.names.append(name)
+                        self.is_ready.append(is_ready)
+                        msg = msg[21:]
+                    self.update_players()
+                    
                 except socket.timeout:
                     continue
                 except Exception as e:
                     print(e)
 
-                time.sleep(1)
+                time.sleep(0.1)
+    
+    def update_players(self):
+        for i in range(len(self.names)):
+            self.players_name_text[i].change_text(self.names[i])
+            if self.is_ready[i]:
+                self.players_name_text[i].change_color((0, 255, 0))
+            else:
+                self.players_name_text[i].change_color((255, 0, 0))
+        for i in range(len(self.names), len(self.names)+self.info.number_of_bots):
+            self.players_name_text[i].change_text("BOT")
+            self.players_name_text[i].change_color((255, 255, 255))
+        
+        for i in range(len(self.names)+self.info.number_of_bots, self.info.max_players):
+            self.players_name_text[i].change_text("")

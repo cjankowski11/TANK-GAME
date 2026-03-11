@@ -18,8 +18,8 @@ class OnlineLobbyPage:
         
         self.names = []
         self.is_ready = []
-        self.host = ""
-        self.port = 
+        self.host = "192.168.0.199"
+        self.port = 54886
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, True)
         self.socket.settimeout(1)
@@ -78,7 +78,7 @@ class OnlineLobbyPage:
                 self.socket.sendto(struct.pack("B?20s", 1, self.ready, self.info.name.encode()), (self.host, self.port))
             except Exception as e:
                 print(e)
-            time.sleep(0.5)
+            time.sleep(0.2)
 
     def recive(self):
         while self.info.online:
@@ -86,6 +86,7 @@ class OnlineLobbyPage:
                 msg, _ = self.socket.recvfrom(2048)
                 if msg.decode() == "START":
                     self.info.start_game = True
+                    
                     # self.socket.close()
                 else:
                     num_players, num_bots = struct.unpack("BB", msg[:2])
@@ -105,7 +106,7 @@ class OnlineLobbyPage:
                 continue
             except Exception as e:
                 print(e)
-            time.sleep(0.5)
+            time.sleep(0.01)
     
     def update_players(self):
         for i in range(len(self.names)):

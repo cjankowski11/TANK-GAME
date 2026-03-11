@@ -29,7 +29,7 @@ class Server:
                 with self.lock:
                     if msg_type == 1:
                         ready, name = struct.unpack("?20s", data[1:])
-                        all_players = self.get_players_number() + self.bots_number
+                        all_players = self.get_menu_players_number() + self.bots_number
                         if all_players < 4 or addr in self.menu_players:
                             self.menu_players[addr] = {"name": name.decode(),
                                                   "time": time.time(),
@@ -38,7 +38,7 @@ class Server:
                         # print(self.menu_players)
                     elif msg_type == 2:
                         # print("add bot")
-                        if self.bots_number + self.get_players_number() < 4:
+                        if self.bots_number + self.get_menu_players_number() < 4:
                             self.bots_number += 1
                     
                     elif msg_type == 3:
@@ -75,7 +75,7 @@ class Server:
                 continue
             except Exception as e:
                 print(e)
-            time.sleep(0.01)
+            # time.sleep(0.01)
         self.thread_count -= 1
 
     def broadcasting(self):  
@@ -85,7 +85,7 @@ class Server:
                 self.resending_active_players()
             if self.start_game:
                 self.initialize_game
-            time.sleep(0.5)
+            time.sleep(0.1)
         self.thread_count -= 1
 
     def await_kill(self):
@@ -100,7 +100,7 @@ class Server:
         try:
             while True:
                 time.sleep(0.05)
-                # print("ez")
+                
         except KeyboardInterrupt:
             self.await_kill()
 
@@ -109,29 +109,39 @@ class Server:
         addr_to_delete = []
         for addr, _ in self.menu_players.items():
             if time.time() - self.menu_players[addr]["time"] > 5:
-                print(f"{self.menu_players[addr]["name"]} disconnected")
                 addr_to_delete.append(addr)
         for addr in addr_to_delete:
             self.menu_players.pop(addr)
 
-    def get_players_number(self):
-        return len(self.menu_players.keys())
+    def get_menu_players_number(self):
+        return len(self.menu_players)
+    
+    def get_menu_players_addrs(self):
+        return list(self.menu_players.keys())
+
+    def get_menu_players_values(self):
+        return list(self.menu_players.values())
     
     def resending_active_players(self):
         with self.lock:
             self.delete_not_active()
-            buffor = struct.pack("BB", len(self.menu_players), self.bots_number)
-            for value in self.menu_players.values():
-                buffor += struct.pack("?20s", value["ready"], (value["name"]).encode())
+            current_players = self.get_menu_players_values()
+            num_players = self.get_menu_players_number()
+            current_bots = self.bots_number
+        buffor = struct.pack("BB", num_players, current_bots)
+        for value in current_players:
+            buffor += struct.pack("?20s", value["ready"], (value["name"]).encode())
+        with self.lock:
+            addrs = self.get_menu_players_addrs()
 
-        for addr in list(self.menu_players.keys()):
+        for addr in addrs:
             try:
                 self.socket.sendto(buffor, addr)
             except Exception as e:
-                print(e)
+                print(f"Błąd wysyłki do {addr}: {e}")
             
     def initialize_game(self):
         pass
 
-server = Server("", )
+server = Server("0.0.0.0", 54886)
 server.run()

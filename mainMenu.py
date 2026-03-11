@@ -5,6 +5,8 @@ from playPage import PlayPage
 from settingsPage import SettingsPage
 from localLobbyPage import LocalLobbyPage
 from onlineLobbyPage import OnlineLobbyPage
+from game import Game
+
 
 class MainMenu:
     def __init__(self):
@@ -21,7 +23,8 @@ class MainMenu:
             "SETTINGS": SettingsPage(),
             "PLAY": PlayPage(self.info),
             "LOCAL_LOBBY": LocalLobbyPage(self.info),
-            "ONLINE_LOBBY": OnlineLobbyPage(self.info)
+            "ONLINE_LOBBY": OnlineLobbyPage(self.info),
+            "GAME": Game(self.info)
                  }
         currentpage = pages["MENU"]
         while self.running:
@@ -32,10 +35,11 @@ class MainMenu:
                 if new_page == "QUIT":
                     self.running = False
                     break
+                if new_page == "ONLINE_LOBBY":
+                    pages["ONLINE_LOBBY"].start_connection()
                 if new_page:
                     currentpage = pages[new_page]
-            # if self.info.online:
-            #     currentpage.send_to_server_msg_that_i_exist()
+
             self.screen.fill("purple")
             currentpage.draw_page(self.screen)
             pygame.display.update()

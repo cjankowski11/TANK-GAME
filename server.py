@@ -8,10 +8,10 @@ class Server:
     def __init__(self, host='127.0.0.1', port=34567):
         self.host = host
         self.port = port
-
+        self.start_game = False
         self.kill = False
         self.thread_count = 0
-        self.players = {}
+        self.menu_players = {}
         self.max_players = 4
         self.bots_number = 0
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -24,27 +24,41 @@ class Server:
         try:
             if len(data):
                 msg_type = struct.unpack("B", data[:1])[0]
-                if addr in self.players:
-                    self.players[addr]["time"] = time.time()
+                if addr in self.menu_players:
+                    self.menu_players[addr]["time"] = time.time()
                 with self.lock:
                     if msg_type == 1:
                         ready, name = struct.unpack("?20s", data[1:])
                         all_players = self.get_players_number() + self.bots_number
-                        if all_players < 4 or addr in self.players:
-                            self.players[addr] = {"name": name.decode(),
+                        if all_players < 4 or addr in self.menu_players:
+                            self.menu_players[addr] = {"name": name.decode(),
                                                   "time": time.time(),
                                                   "ready": ready}
 
-                        # print(self.players)
-                    if msg_type == 2:
+                        # print(self.menu_players)
+                    elif msg_type == 2:
                         # print("add bot")
                         if self.bots_number + self.get_players_number() < 4:
                             self.bots_number += 1
                     
-                    if msg_type == 3:
+                    elif msg_type == 3:
                         # print("sub bot")
                         if self.bots_number > 0:
                             self.bots_number -= 1
+                    
+                    elif msg_type == 4 and not self.start_game:
+                        start = True
+                        for value in self.menu_players.values():
+                            if value["ready"] is False:
+                                start = False
+                        self.start_game = start     # for now sending it here
+                        if self.start_game:
+                            for addr in list(self.menu_players.keys()):
+                                try:
+                                    self.socket.sendto("START".encode(), addr)
+                                except Exception as e:
+                                    print(e)
+                        
 
         except Exception as e:
             print(f"error {e}")
@@ -67,19 +81,11 @@ class Server:
     def broadcasting(self):  
         self.thread_count += 1
         while not self.kill:
-            if self.players:
-                with self.lock:
-                    self.delete_not_active()
-                    buffor = struct.pack("BB", len(self.players), self.bots_number)
-                    for value in self.players.values():
-                        buffor += struct.pack("?20s", value["ready"], (value["name"]).encode())
-
-                for addr in list(self.players.keys()):
-                    try:
-                        self.socket.sendto(buffor, addr)
-                    except Exception as e:
-                        print(e)
-            time.sleep(0.1)
+            if self.menu_players and not self.start_game:
+                self.resending_active_players()
+            if self.start_game:
+                self.initialize_game
+            time.sleep(0.5)
         self.thread_count -= 1
 
     def await_kill(self):
@@ -101,15 +107,31 @@ class Server:
     
     def delete_not_active(self):
         addr_to_delete = []
-        for addr, data in self.players.items():
-            if time.time() - self.players[addr]["time"] > 5:
-                print(f"{self.players[addr]["name"]} disconnected")
+        for addr, _ in self.menu_players.items():
+            if time.time() - self.menu_players[addr]["time"] > 5:
+                print(f"{self.menu_players[addr]["name"]} disconnected")
                 addr_to_delete.append(addr)
         for addr in addr_to_delete:
-            self.players.pop(addr)
+            self.menu_players.pop(addr)
 
     def get_players_number(self):
-        return len(self.players.keys())
+        return len(self.menu_players.keys())
+    
+    def resending_active_players(self):
+        with self.lock:
+            self.delete_not_active()
+            buffor = struct.pack("BB", len(self.menu_players), self.bots_number)
+            for value in self.menu_players.values():
+                buffor += struct.pack("?20s", value["ready"], (value["name"]).encode())
 
-server = Server("")
+        for addr in list(self.menu_players.keys()):
+            try:
+                self.socket.sendto(buffor, addr)
+            except Exception as e:
+                print(e)
+            
+    def initialize_game(self):
+        pass
+
+server = Server("", )
 server.run()

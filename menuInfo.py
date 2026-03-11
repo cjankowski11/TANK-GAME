@@ -1,7 +1,7 @@
 
 class MenuInfo:
     def __init__(self):
-        self.play = False
+        self.start_game = False
         self.online = None
         self.number_of_players = 0
         self.max_players = 4

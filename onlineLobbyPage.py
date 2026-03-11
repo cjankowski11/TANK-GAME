@@ -39,6 +39,10 @@ class OnlineLobbyPage:
         threading.Thread(target=self.send_to_server_msg_that_i_exist, daemon=True).start()
         self.ready = False
 
+    def start_connection(self):
+        threading.Thread(target=self.recive, daemon=True).start()
+        threading.Thread(target=self.send_to_server_msg_that_i_exist, daemon=True).start()
+
     def draw_page(self, screen):
         self.back_button.draw(screen)
         self.add_bot_button.draw(screen)
@@ -62,23 +66,28 @@ class OnlineLobbyPage:
         if self.ready_button.is_clicked(event):
             self.ready = not self.ready
         if self.start_button.is_clicked(event):
-            pass
-            # start the game
+            self.socket.sendto(struct.pack("B", 4), (self.host, self.port))
+        if self.info.start_game:
+            return "GAME"
+        
+        
     
     def send_to_server_msg_that_i_exist(self):
-        while True:
-            while self.info.online:
-                try:
-                    self.socket.sendto(struct.pack("B?20s", 1, self.ready, self.info.name.encode()), (self.host, self.port))
-                except Exception as e:
-                    print(e)
-                time.sleep(0.1)
+        while self.info.online:
+            try:
+                self.socket.sendto(struct.pack("B?20s", 1, self.ready, self.info.name.encode()), (self.host, self.port))
+            except Exception as e:
+                print(e)
+            time.sleep(0.5)
 
     def recive(self):
-        while True:
-            while self.info.online:
-                try:
-                    msg, _ = self.socket.recvfrom(2048)
+        while self.info.online:
+            try:
+                msg, _ = self.socket.recvfrom(2048)
+                if msg.decode() == "START":
+                    self.info.start_game = True
+                    # self.socket.close()
+                else:
                     num_players, num_bots = struct.unpack("BB", msg[:2])
                     msg = msg[2:]
                     self.info.number_of_bots = num_bots
@@ -91,13 +100,12 @@ class OnlineLobbyPage:
                         self.is_ready.append(is_ready)
                         msg = msg[21:]
                     self.update_players()
-                    
-                except socket.timeout:
-                    continue
-                except Exception as e:
-                    print(e)
-
-                time.sleep(0.1)
+                
+            except socket.timeout:
+                continue
+            except Exception as e:
+                print(e)
+            time.sleep(0.5)
     
     def update_players(self):
         for i in range(len(self.names)):

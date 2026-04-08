@@ -8,7 +8,7 @@ import time
 
 class OnlineLobbyPage:
 
-    def __init__(self, info):
+    def __init__(self, info, host="127.0.0.1", port=12345):
         self.info = info
         self.back_button = Button("BACK", 100, 100, 100, 100, (50, 50, 200), (80, 80, 250), 30)
         self.players_name_text = [Text("", 300, 150), Text("", 300, 195)
@@ -18,8 +18,8 @@ class OnlineLobbyPage:
         
         self.names = []
         self.is_ready = []
-        self.host = "192.168.0.199"
-        self.port = 54886
+        self.host = host
+        self.port = port
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, True)
         self.socket.settimeout(1)
@@ -31,15 +31,23 @@ class OnlineLobbyPage:
         sub_bot.change_to_sysfont("arial", 50)
         self.subtract_bot_button = sub_bot
 
+        self.rounds_text = Text(f"ROUNDS {self.info.number_of_rounds}", 250, 50)
+        add_round = Button("+", 250, 90, 100, 100, (50, 50, 200), (80, 80, 250))
+        add_round.change_to_sysfont("arial", 50)
+        self.add_round_button = add_round
+        sub_round = Button("-", 375, 90, 100, 100, (50, 50, 200), (80, 80, 250))
+        sub_round.change_to_sysfont("arial", 50)
+        self.subtract_round_button = sub_round
+
         self.ready_button = Button("READY", 50, 340, 300, 100, (50, 50, 200), (80, 80, 250), 50)
         self.start_button = Button("START", 450, 340, 300, 100, (50, 50, 200), (80, 80, 250), 50)
 
         # self.socket.bind((self.host, self.port))
-        threading.Thread(target=self.recive, daemon=True).start()
-        threading.Thread(target=self.send_to_server_msg_that_i_exist, daemon=True).start()
+        # threading.Thread(target=self.recive, daemon=True).start()
+        # threading.Thread(target=self.send_to_server_msg_that_i_exist, daemon=True).start()
         self.ready = False
 
-    def start_connection(self):
+    def start_connection(self):         # should i end threads when i exit from onlinePage?hmm
         threading.Thread(target=self.recive, daemon=True).start()
         threading.Thread(target=self.send_to_server_msg_that_i_exist, daemon=True).start()
 
@@ -50,6 +58,9 @@ class OnlineLobbyPage:
         self.bot_text.draw(screen)
         self.ready_button.draw(screen)
         self.start_button.draw(screen)
+        self.rounds_text.draw(screen)
+        self.add_round_button.draw(screen)
+        self.subtract_round_button.draw(screen)
         for player_name in self.players_name_text:
             player_name.draw(screen)
 
@@ -67,13 +78,21 @@ class OnlineLobbyPage:
             self.ready = not self.ready
         if self.start_button.is_clicked(event):
             self.socket.sendto(struct.pack("B", 4), (self.host, self.port))
-        if self.info.start_game:
-            return "GAME"
+        if self.add_round_button.is_clicked(event):
+            if self.info.number_of_rounds < 20:
+                self.info.number_of_rounds += 1
+                self.rounds_text.change_text(f"ROUNDS {self.info.number_of_rounds}")
+        if self.subtract_round_button.is_clicked(event):
+            if self.info.number_of_rounds > 1:
+                self.info.number_of_rounds -= 1
+                self.rounds_text.change_text(f"ROUNDS {self.info.number_of_rounds}")
+        if self.info.game_running:
+            return "QUIT"
         
         
     
     def send_to_server_msg_that_i_exist(self):
-        while self.info.online:
+        while self.info.online and not self.info.game_running:
             try:
                 self.socket.sendto(struct.pack("B?20s", 1, self.ready, self.info.name.encode()), (self.host, self.port))
             except Exception as e:
@@ -81,13 +100,13 @@ class OnlineLobbyPage:
             time.sleep(0.2)
 
     def recive(self):
-        while self.info.online:
+        while self.info.online and not self.info.game_running:
             try:
                 msg, _ = self.socket.recvfrom(2048)
                 if msg.decode() == "START":
-                    self.info.start_game = True
+                    self.info.socket = self.socket
+                    self.info.game_running = True
                     
-                    # self.socket.close()
                 else:
                     num_players, num_bots = struct.unpack("BB", msg[:2])
                     msg = msg[2:]

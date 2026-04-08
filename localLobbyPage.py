@@ -2,6 +2,7 @@ from button import Button
 from text import Text
 import pygame
 
+
 class LocalLobbyPage:
 
     def __init__(self, info):
@@ -39,6 +40,7 @@ class LocalLobbyPage:
 
     def is_page_changed(self, event):
         if self.back_button.is_clicked(event):
+            self.info.online = None
             return "PLAY"
         
         if self.add_player_button.is_clicked(event) and self.info.number_of_players + self.info.number_of_bots < self.info.max_players:
@@ -62,5 +64,5 @@ class LocalLobbyPage:
             print(f"bots {self.info.number_of_bots}")
 
         if self.play_buton.is_clicked(event):
-            self.info.play = True
+            self.info.game_running = True
             return "QUIT"

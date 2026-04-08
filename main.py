@@ -1,11 +1,25 @@
-from game import Game
 from mainMenu import MainMenu
-
+from localGame import LocalGame
+from onlineGame import OnlineGame
 if __name__ == "__main__":
-    menu = MainMenu()
-    menu.run()
-    print(menu.info.online)
-    print(menu.info.start_game)
-    print(menu.info.number_of_players)
-    print(menu.info.number_of_bots)
-    # Game("127.0.0.1", 63659).run()
+    while True:
+        menu = MainMenu()
+        menu_info = menu.run()
+        game = None
+        print(menu_info.online)
+        if menu_info.online:
+            game = OnlineGame(menu_info.number_of_bots, menu_info.number_of_rounds, menu_info.socket, )
+            game.start_connection()
+            pass
+        elif menu_info.online is None:
+            pass
+        else:
+            game = LocalGame(menu_info.number_of_players, menu_info.number_of_bots)
+        if game is None:
+            break
+        else:
+            for _ in range(1):
+                game_running = game.run()
+                if game_running is False:
+                    break
+    

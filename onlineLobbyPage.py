@@ -86,18 +86,17 @@ class OnlineLobbyPage:
             if self.info.number_of_rounds > 1:
                 self.info.number_of_rounds -= 1
                 self.rounds_text.change_text(f"ROUNDS {self.info.number_of_rounds}")
-        if self.info.game_running:
-            return "QUIT"
+
         
         
     
     def send_to_server_msg_that_i_exist(self):
-        while self.info.online and not self.info.game_running:
+        while self.info.online:
             try:
                 self.socket.sendto(struct.pack("B?20s", 1, self.ready, self.info.name.encode()), (self.host, self.port))
             except Exception as e:
                 print(e)
-            time.sleep(0.2)
+            time.sleep(0.5)
 
     def recive(self):
         while self.info.online and not self.info.game_running:

@@ -27,9 +27,14 @@ class GameEngine:
             if angle > 360:
                 angle -= 360
             self.players[player].angle = angle
+
     def get_players(self, binary=False):
         if binary:
-            pass
+            buffor = struct.pack("B", len(self.players))
+            for name, tank in self.players.items():
+                buffor += struct.pack("20s", name.encode())
+                buffor += struct.pack("fffB", tank.position.x, tank.position.y, tank.angle, tank.bullets)
+            return buffor
         return self.players
 
     def get_walls(self, binary=False):

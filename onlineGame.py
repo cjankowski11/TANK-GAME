@@ -5,6 +5,7 @@ import pygame
 import random
 import math
 import time
+from tank import Tank
 from gameView import GameView
 
 
@@ -20,7 +21,7 @@ class OnlineGame:
         pass
     
     def run(self):
-        self.gameView = GameView([], [])
+        self.gameView = GameView()
         running = True
         while running:
             for event in pygame.event.get():
@@ -32,14 +33,13 @@ class OnlineGame:
 
     def listener(self):
         actions = {
-            2: self.update_walls
+            2: self.initialize_map
         }
         while True:
             try:
                 msg, _ = self.socket.recvfrom(2048)
                 
                 number = msg[0]
-                print(number)
                 actions[number](msg)
 
             except socket.timeout:
@@ -55,16 +55,29 @@ class OnlineGame:
         threading.Thread(target=self.listener, daemon=True).start()
         threading.Thread(target=self.broadcasting, daemon=True).start()
 
-    def update_walls(self, msg):
+    def initialize_map(self, msg):
         
         number_of_walls = msg[1]
         offset = 2
         walls = []
+        players = {}
         for _ in range(number_of_walls):
             left, top, width, height = struct.unpack("<HHHH", msg[offset:offset+8])
             walls.append(pygame.Rect(left, top, width, height))
             offset += 8
+        number_of_players = msg[offset]
+        offset += 1
+        print(number_of_players)
+        for _ in range(number_of_players):
+            name = struct.unpack("20s", msg[offset:offset+20])
+            print(name)
+            offset += 20
+            x, y, angle, bullets = struct.unpack("fffB", msg[offset:offset+13])
+            print(x, y, angle)
+            offset += 13
+            players[name] = Tank(pygame.Vector2(x, y), angle, bullets)
         self.gameView.update_walls(walls)
+        self.gameView.initialize_players(players)
 
 
 

@@ -8,7 +8,7 @@ if __name__ == "__main__":
         menu_info = menu.run()
         print(menu_info.online)
         if menu_info.online:
-            game = OnlineGame(menu_info.number_of_bots, menu_info.number_of_rounds, menu_info.socket,)
+            game = OnlineGame(menu_info.number_of_bots, menu_info.number_of_rounds, menu_info.socket, )
             game.start_connection()
             pass
         elif menu_info.online is None:

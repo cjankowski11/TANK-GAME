@@ -168,9 +168,11 @@ class Server:
             except Exception as e:
                 print(e)
             
-    def initialize_game(self):
+    def initialize_game(self): 
         with self.lock:
             names = [value["name"] for value in self.menu_players.values()]
+            for i in range(self.bots_number):
+                names.append(f"BOT{i}")
             for player, value in self.menu_players.items(): # is it needed? ig not
                 self.players_addr_name[player] = value["name"]
         self.gameEngine = GameEngine(names, "map1.txt")
@@ -186,7 +188,8 @@ class Server:
     def send_starting_info(self):
         # send walls to players
         walls = self.gameEngine.get_walls(binary=True)
-        msg = struct.pack("B", 2) + walls
+        players = self.gameEngine.get_players(binary=True)
+        msg = struct.pack("B", 2) + walls + players
         print(msg)
         with self.lock:
             addrs = self.get_menu_players_addrs()

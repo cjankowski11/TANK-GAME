@@ -22,7 +22,7 @@ class MainMenu:
             "SETTINGS": SettingsPage(),
             "PLAY": PlayPage(self.info),
             "LOCAL_LOBBY": LocalLobbyPage(self.info),
-            "ONLINE_LOBBY": OnlineLobbyPage(self.info, ),
+            "ONLINE_LOBBY": OnlineLobbyPage(self.info, )
                  }
         currentpage = pages["MENU"]
         new_page = None

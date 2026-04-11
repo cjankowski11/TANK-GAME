@@ -4,11 +4,11 @@ from onlineGame import OnlineGame
 if __name__ == "__main__":
     while True:
         menu = MainMenu()
-        menu_info = menu.run()
         game = None
+        menu_info = menu.run()
         print(menu_info.online)
         if menu_info.online:
-            game = OnlineGame(menu_info.number_of_bots, menu_info.number_of_rounds, menu_info.socket, )
+            game = OnlineGame(menu_info.number_of_bots, menu_info.number_of_rounds, menu_info.socket,)
             game.start_connection()
             pass
         elif menu_info.online is None:

@@ -14,6 +14,7 @@ class Server:
         self.menu_players = {}
         self.max_players = 4
         self.bots_number = 0
+        self.rounds_number = 5
         self.players_addr_name = {}
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, True)
@@ -55,6 +56,13 @@ class Server:
                         self.start_game = (bool(self.menu_players) and
                                            all(p["ready"]
                                            for p in self.menu_players.values()))
+                    elif msg_type == 5:
+                        if self.rounds_number < 20:
+                            self.rounds_number += 1
+                    
+                    elif msg_type == 6:
+                        if self.rounds_number > 1:
+                            self.rounds_number -= 1
                         
         except Exception as e:
             print(f"error {e}")
@@ -90,13 +98,15 @@ class Server:
             if not active_game:
                 self.resending_active_players()
             else:
-                if not game_initialized:
-                    self.initialize_game() 
-                    for addr in current_players:
-                        self.socket.sendto("START".encode(), addr)
+                if not game_initialized:   #make sure that client gets start message before data
+                    self.initialize_game() # imo client sends info that he got start info
+                    for addr in current_players:      #nvm najlepiej po prostu sygnal kilka razy wyslac bo czekanie moze byc problematyczne jak kogos wyjebie
+                        self.socket.sendto(struct.pack("B", 1), addr)
                     game_initialized = True
-                    time.sleep(0.5)
-                    self.send_starting_info()
+                    time.sleep(0.1)
+                    for _ in range(5):
+                        self.send_starting_info()
+                        time.sleep(0.5)
 
                 if now >= next_tick:
                     self.update_game_logic()  
@@ -145,7 +155,8 @@ class Server:
             current_players = self.get_menu_players_values()
             num_players = self.get_menu_players_number()
             current_bots = self.bots_number
-        buffor = struct.pack("BB", num_players, current_bots)
+            rounds = self.rounds_number
+        buffor = struct.pack("BBBB", 0, num_players, current_bots, rounds)
         for value in current_players:
             buffor += struct.pack("?20s", value["ready"], (value["name"]).encode())
         with self.lock:

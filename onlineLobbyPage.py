@@ -78,20 +78,16 @@ class OnlineLobbyPage:
             self.ready = not self.ready
         if self.start_button.is_clicked(event):
             self.socket.sendto(struct.pack("B", 4), (self.host, self.port))
-        if self.add_round_button.is_clicked(event):
-            if self.info.number_of_rounds < 20:
-                self.info.number_of_rounds += 1
-                self.rounds_text.change_text(f"ROUNDS {self.info.number_of_rounds}")
+        if self.add_round_button.is_clicked(event):   #zmienic to na serwer
+            self.socket.sendto(struct.pack("B", 5), (self.host, self.port))
         if self.subtract_round_button.is_clicked(event):
-            if self.info.number_of_rounds > 1:
-                self.info.number_of_rounds -= 1
-                self.rounds_text.change_text(f"ROUNDS {self.info.number_of_rounds}")
+            self.socket.sendto(struct.pack("B", 6), (self.host, self.port))
 
         
         
     
     def send_to_server_msg_that_i_exist(self):
-        while self.info.online:
+        while self.info.online and not self.info.game_running:
             try:
                 self.socket.sendto(struct.pack("B?20s", 1, self.ready, self.info.name.encode()), (self.host, self.port))
             except Exception as e:
@@ -102,14 +98,13 @@ class OnlineLobbyPage:
         while self.info.online and not self.info.game_running:
             try:
                 msg, _ = self.socket.recvfrom(2048)
-                if msg.decode() == "START":
-                    self.info.socket = self.socket
-                    self.info.game_running = True
-                    
-                else:
-                    num_players, num_bots = struct.unpack("BB", msg[:2])
-                    msg = msg[2:]
+                msg_type = int(msg[0])
+
+                if msg_type == 0:
+                    num_players, num_bots, rounds = struct.unpack("BBB", msg[1:4])
+                    msg = msg[4:]
                     self.info.number_of_bots = num_bots
+                    self.info.number_of_rounds = rounds
                     self.names = []
                     self.is_ready = []
                     for _ in range(num_players):
@@ -119,6 +114,16 @@ class OnlineLobbyPage:
                         self.is_ready.append(is_ready)
                         msg = msg[21:]
                     self.update_players()
+                    self.update_rounds()
+
+                if msg_type == 1:
+                    self.info.socket = self.socket
+                    self.info.game_running = True
+                    break
+                
+                if msg_type == 2:  # make it better looking
+                    break
+
                 
             except socket.timeout:
                 continue
@@ -139,3 +144,6 @@ class OnlineLobbyPage:
         
         for i in range(len(self.names)+self.info.number_of_bots, self.info.max_players):
             self.players_name_text[i].change_text("")
+    
+    def update_rounds(self):
+        self.rounds_text.change_text(f"ROUNDS {self.info.number_of_rounds}")

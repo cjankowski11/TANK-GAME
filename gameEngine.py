@@ -9,7 +9,7 @@ class GameEngine:
         with open(game_map, "r") as f:
             for line in f:
                 wall = line.strip().split(",")
-                self.walls.append(pygame.Rect(float(wall[0]), float(wall[1]), float(wall[2]), float(wall[3])))
+                self.walls.append(pygame.Rect(int(wall[0]), int(wall[1]), int(wall[2]), int(wall[3])))
                 self.players = {}
         for name in players_names:
             start_pos = self.get_start_pos(800, 450)
@@ -36,7 +36,7 @@ class GameEngine:
         if binary:
             buffor = struct.pack("B", len(self.walls))
             for wall in self.walls:
-                buffor += struct.pack("HHHH", wall.left, wall.top, wall.width, wall.height)
+                buffor += struct.pack("<HHHH", wall.left, wall.top, wall.width, wall.height)
             return buffor
         return self.walls
     

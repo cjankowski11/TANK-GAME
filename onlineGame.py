@@ -37,7 +37,9 @@ class OnlineGame:
         while True:
             try:
                 msg, _ = self.socket.recvfrom(2048)
+                
                 number = msg[0]
+                print(number)
                 actions[number](msg)
 
             except socket.timeout:
@@ -54,13 +56,14 @@ class OnlineGame:
         threading.Thread(target=self.broadcasting, daemon=True).start()
 
     def update_walls(self, msg):
+        
         number_of_walls = msg[1]
-        msg = msg[2:]
+        offset = 2
         walls = []
         for _ in range(number_of_walls):
-            left, top, width, height = struct.unpack("HHHH", msg[:8])
-            msg = msg[8:]
+            left, top, width, height = struct.unpack("<HHHH", msg[offset:offset+8])
             walls.append(pygame.Rect(left, top, width, height))
+            offset += 8
         self.gameView.update_walls(walls)
 
 

@@ -5,7 +5,8 @@ from playPage import PlayPage
 from settingsPage import SettingsPage
 from localLobbyPage import LocalLobbyPage
 from onlineLobbyPage import OnlineLobbyPage
-
+import os
+from dotenv import load_dotenv
 
 class MainMenu:
     def __init__(self):
@@ -16,13 +17,16 @@ class MainMenu:
         self.info = MenuInfo()
 
     def run(self):
+        load_dotenv()
+        server_ip = os.getenv("IP")
+        port = os.getenv("PORT")
         pygame.init()
         pages = {
             "MENU": MenuPage(),
             "SETTINGS": SettingsPage(),
             "PLAY": PlayPage(self.info),
             "LOCAL_LOBBY": LocalLobbyPage(self.info),
-            "ONLINE_LOBBY": OnlineLobbyPage(self.info,)
+            "ONLINE_LOBBY": OnlineLobbyPage(self.info, server_ip, int(port))
                  }
         currentpage = pages["MENU"]
         new_page = None

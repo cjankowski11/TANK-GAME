@@ -3,6 +3,12 @@ import threading
 import time
 import struct
 from gameEngine import GameEngine
+from dotenv import load_dotenv
+import os
+load_dotenv()
+server_ip = os.getenv("IP")
+port = os.getenv("PORT")
+
 
 class Server:
     def __init__(self, host='127.0.0.1', port=34567):
@@ -66,7 +72,6 @@ class Server:
                         
         except Exception as e:
             print(f"error {e}")
-
 
     def listen_loop(self):
         self.thread_count += 1
@@ -196,5 +201,5 @@ class Server:
         for addr in addrs:
             self.socket.sendto(msg, addr)
 
-server = Server()
+server = Server(server_ip, int(port))
 server.run()

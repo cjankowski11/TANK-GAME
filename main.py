@@ -1,14 +1,20 @@
 from mainMenu import MainMenu
 from localGame import LocalGame
 from onlineGame import OnlineGame
+import os
+from dotenv import load_dotenv
+
 if __name__ == "__main__":
+    load_dotenv()
+    server_ip = os.getenv("IP")
+    port = os.getenv("PORT")
     while True:
         menu = MainMenu()
         game = None
         menu_info = menu.run()
         print(menu_info.online)
         if menu_info.online:
-            game = OnlineGame(menu_info.number_of_bots, menu_info.number_of_rounds, menu_info.socket, )
+            game = OnlineGame(menu_info.number_of_bots, menu_info.number_of_rounds, menu_info.socket, server_ip, int(port))
             game.start_connection()
             pass
         elif menu_info.online is None:

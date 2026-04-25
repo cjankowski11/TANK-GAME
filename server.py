@@ -32,6 +32,7 @@ class Server:
         try:
             if len(data):
                 msg_type = struct.unpack("B", data[:1])[0]
+                print(msg_type)
                 now = time.time()
                 decoded_name = None
                 ready_status = False
@@ -69,6 +70,18 @@ class Server:
                     elif msg_type == 6:
                         if self.rounds_number > 1:
                             self.rounds_number -= 1
+                    
+                    elif msg_type == 7:
+                        name = self.get_player_name(addr)
+                        offset = 1     
+                        size = struct.unpack("B", data[offset:offset+1])[0]
+                        # print(size)
+                        offset += 1
+                        for _ in range(size):
+                            instruction = data[offset]
+                            self.gameEngine.update_player(name, instruction)
+                            offset += 1
+                        
                         
         except Exception as e:
             print(f"error {e}")
@@ -154,6 +167,9 @@ class Server:
     def get_menu_players_values(self):
         return list(self.menu_players.values())
     
+    def get_player_name(self, addr):
+        return self.menu_players[addr]["name"]
+    
     def resending_active_players(self):
         with self.lock:
             self.delete_not_active()
@@ -188,7 +204,13 @@ class Server:
         pass
 
     def broadcast_game_state(self):
-        pass
+        players = self.gameEngine.get_players(binary=True)
+        msg = struct.pack("B", 3) + players
+        # print(msg)
+        with self.lock:
+            addrs = self.get_menu_players_addrs()
+        for addr in addrs:
+            self.socket.sendto(msg, addr)
 
     def send_starting_info(self):
         # send walls to players

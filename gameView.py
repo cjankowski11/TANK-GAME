@@ -22,8 +22,11 @@ class GameView:
             self.screen.blit(self.tank_images[i], self.players[player].position)
         pygame.display.update()
     
-    def update(self, players):
-        self.players = players
+    def update_player(self, name, x, y, angle, bullets):
+        self.players[name].position.x = x
+        self.players[name].position.y = y
+        self.players[name].angle = angle
+        self.players[name].bullets = bullets
 
     def update_walls(self, walls):
         self.walls = walls

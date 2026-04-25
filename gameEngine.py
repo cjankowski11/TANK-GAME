@@ -20,13 +20,11 @@ class GameEngine:
         old_angle = self.players[player].angle
         if sign == 0:
             self.players[player].position.y -= 0.05
+            print(f"updated{self.players[player].position.y}")
             #if not does_collide
         elif sign == 2:
+            self.players[player].position.y += 0.05
 
-            angle = old_angle + 0.02
-            if angle > 360:
-                angle -= 360
-            self.players[player].angle = angle
 
     def get_players(self, binary=False):
         if binary:

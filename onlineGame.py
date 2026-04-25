@@ -31,12 +31,16 @@ class OnlineGame:
                     return False
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_SPACE:
-                        print("shoot")
+                        self.action_queue.put(4)
             keys = pygame.key.get_pressed()
             if keys[pygame.K_w]:
                 self.action_queue.put(0)
+            if keys[pygame.K_a]:
+                self.action_queue.put(1)
             if keys[pygame.K_s]:
                 self.action_queue.put(2)
+            if keys[pygame.K_d]:
+                self.action_queue.put(3)
 
                 
             
@@ -115,10 +119,8 @@ class OnlineGame:
         offset = 2
         for _ in range(number_of_players):
             name = struct.unpack("20s", msg[offset:offset+20])
-            print(name)
             offset += 20
             x, y, angle, bullets = struct.unpack("fffB", msg[offset:offset+13])
-            print(x, y, angle)
             offset += 13
             self.gameView.update_player(name, x, y, angle, bullets)
 

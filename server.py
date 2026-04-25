@@ -32,7 +32,6 @@ class Server:
         try:
             if len(data):
                 msg_type = struct.unpack("B", data[:1])[0]
-                print(msg_type)
                 now = time.time()
                 decoded_name = None
                 ready_status = False

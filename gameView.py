@@ -18,8 +18,10 @@ class GameView:
         self.screen.fill("white")
         for wall in self.walls:
             pygame.draw.rect(self.screen, "black", wall)
-        for i, player in enumerate(self.players):
-            self.screen.blit(self.tank_images[i], self.players[player].position)
+        for i, tank in enumerate(self.players.values()):
+            rotated_tank = pygame.transform.rotate(self.tank_images[i], tank.angle)
+            new_rect = rotated_tank.get_rect(center=tank.position)
+            self.screen.blit(rotated_tank, new_rect)
         pygame.display.update()
     
     def update_player(self, name, x, y, angle, bullets):

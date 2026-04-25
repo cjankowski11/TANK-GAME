@@ -2,6 +2,7 @@ import pygame
 import random
 from tank import Tank
 import struct
+import math
 
 class GameEngine:
     def __init__(self, players_names, game_map):
@@ -18,12 +19,27 @@ class GameEngine:
     def update_player(self, player, sign):
         old_pos = self.players[player].position
         old_angle = self.players[player].angle
+        tank = self.players[player]
         if sign == 0:
-            self.players[player].position.y -= 0.05
-            print(f"updated{self.players[player].position.y}")
+            rad = math.radians(tank.angle)
+            tank.position.x -= math.sin(rad) * 0.05
+            tank.position.y -= math.cos(rad) * 0.05
             #if not does_collide
+        elif sign == 1:
+            tank.angle += 0.05
+            if tank.angle > 360:
+                tank.angle -= 360
         elif sign == 2:
-            self.players[player].position.y += 0.05
+            rad = math.radians(tank.angle)
+            tank.position.x += math.sin(rad) * 0.05
+            tank.position.y += math.cos(rad) * 0.05
+        elif sign == 3:
+            tank.angle -= 0.05
+            if tank.angle < 0:
+                tank.angle += 360
+        
+        elif sign == 4:
+            print("SHOOT")
 
 
     def get_players(self, binary=False):

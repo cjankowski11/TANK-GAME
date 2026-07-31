@@ -8,7 +8,7 @@ import os
 from player import Player, BotPlayer
 import network_constants as nc
 load_dotenv()
-server_ip = os.getenv("IP")
+server_ip = os.getenv("SERVER_IP")
 port = os.getenv("PORT")
 
 MAX_ROUNDS = 20

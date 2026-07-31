@@ -13,7 +13,7 @@ class GetNamePage:
         self.submit_button = Button("SUBMIT", 600, 330, 150, 100)
         self.name_text = TextInputBox(300, 200, 400, 100)
         self.name_text.change_to_sysfont()
-        self.instruction_text = Text("Write your nickname", 300, 150)
+        self.instruction_text = Text("Input your nickname", 300, 150)
         self.name_taken_text = Text("THIS NAME IS ALREADY IN USE", 30, 350)
         self.socket = socket
         self.host = host

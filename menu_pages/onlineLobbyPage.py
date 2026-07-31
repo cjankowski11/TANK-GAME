@@ -100,7 +100,7 @@ class OnlineLobbyPage:
             try:
                 msg, _ = self.socket.recvfrom(2048)
                 msg_type = int(msg[0])
-
+                print(f"LOBBY: {msg_type}")
                 if msg_type == nc.ACTIVE_PLAYERS:
                     num_players, num_bots, rounds = struct.unpack("BBB", msg[1:4])
                     msg = msg[4:]
@@ -111,6 +111,7 @@ class OnlineLobbyPage:
                     self.update_rounds()
                     
                 if msg_type == nc.START_GAME:
+                    print("START")
                     self.info.socket = self.socket
                     self.info.game_running = True
                     break

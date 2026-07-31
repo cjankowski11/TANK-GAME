@@ -49,6 +49,7 @@ class OnlineGame:
             try:
                 msg, _ = self.socket.recvfrom(2048)
                 number = msg[0]
+                print(number)
                 actions[number](msg)
 
             except socket.timeout:
@@ -75,6 +76,7 @@ class OnlineGame:
         threading.Thread(target=self.broadcasting, daemon=True).start()
 
     def initialize_map(self, msg):
+        print("initialize")
         number_of_walls = msg[1]
         offset = 2
         walls = []
@@ -92,15 +94,16 @@ class OnlineGame:
             offset += 1
             name = struct.unpack(
                 f"{name_length}s", msg[offset:offset+name_length])[0]
+            name = name.decode()
             offset += name_length
             x, y, angle, bullets = struct.unpack("fffB", msg[offset:offset+13])
             offset += 13
             players[name] = (x, y, angle, bullets)
-
+        print(players)
         self.gameView.update_walls(walls)
         self.gameView.initialize_players(players)
         self.gameView.update_bullets([])
-    
+        
     def update_game(self, msg):
         number_of_players = msg[1]
         offset = 2
@@ -109,6 +112,7 @@ class OnlineGame:
             offset += 1
             name = struct.unpack(
                 f"{name_length}s", msg[offset:offset+name_length])[0]
+            name = name.decode()
             offset += name_length
             x, y, angle, bullets = struct.unpack("fffB", msg[offset:offset+13])
             offset += 13

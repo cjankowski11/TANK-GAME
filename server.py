@@ -188,6 +188,7 @@ class Server:
                         with self.lock:
                             self.menu_players = {}
                             self.players = {}
+                        start_msg_send = False
                 self.update_game_logic()  
                 self.broadcast_game_state() 
                 next_tick += tick_duration

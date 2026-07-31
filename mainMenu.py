@@ -53,7 +53,7 @@ class MainMenu:
         port = os.getenv("PORT")
         socket_obj = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         socket_obj.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, True)
-        socket_obj.settimeout(1)
+        socket_obj.settimeout(7)
         self.pages = {
             "MENU": MenuPage(),
             "SETTINGS": SettingsPage(),

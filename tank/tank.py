@@ -11,3 +11,6 @@ class Tank:
     
     def is_alive(self):
         return self.alive
+
+    def get_position(self):
+        return self.position

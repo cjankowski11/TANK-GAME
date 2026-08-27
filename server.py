@@ -152,7 +152,7 @@ class Server:
                 self.resending_active_players()
                 time.sleep(0.1)
 
-                next_tick = time.time() 
+                next_tick = time.time()
                 current_round = 0
                 continue
 
@@ -189,11 +189,11 @@ class Server:
                             self.menu_players = {}
                             self.players = {}
                         start_msg_send = False
+                        
                 self.update_game_logic()  
                 self.broadcast_game_state() 
                 next_tick += tick_duration
             else:
-
                 time.sleep(0.001)
         self.thread_count -= 1
 
@@ -266,12 +266,12 @@ class Server:
     def initialize_game(self, tps):
         names = []
         with self.lock:
+            # players = self.get_players()
             for name, player in self.players.items():
                 names.append(name)
                 player.alive = True
 
         self.gameEngine = GameEngine(names, tps)
-        # self.gameEngine.choose_map("maps/map3.txt")
                 
     def initialize_players(self):
         for value in self.menu_players.values():

@@ -195,3 +195,7 @@ class GameEngine:
             self.players[name] = TankEngine(start_pos, random.randint(0, 360),
                                             TANK_MAX_AMUNITION, self.ticks_per_sec)
 
+    def reset(self):
+        self.bullets = []
+        self.choose_map()
+

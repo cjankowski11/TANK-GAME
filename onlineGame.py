@@ -80,16 +80,16 @@ class OnlineGame:
         number_of_walls = msg[1]
         offset = 2
         walls = []
-        players = {}
+        tanks = {}
         for _ in range(number_of_walls):
             left, top, width, height = struct.unpack(
                 "<HHHH", msg[offset:offset+8])
             walls.append(pygame.Rect(left, top, width, height))
             offset += 8
-        number_of_players = msg[offset]
+        number_of_tanks = msg[offset]
         offset += 1
        
-        for _ in range(number_of_players):
+        for _ in range(number_of_tanks):
             name_length = struct.unpack("B", msg[offset:offset+1])[0]
             offset += 1
             name = struct.unpack(
@@ -98,10 +98,10 @@ class OnlineGame:
             offset += name_length
             x, y, angle, bullets = struct.unpack("fffB", msg[offset:offset+13])
             offset += 13
-            players[name] = (x, y, angle, bullets)
-        print(players)
+            tanks[name] = (x, y, angle, bullets)
+        print(tanks)
         self.gameView.update_walls(walls)
-        self.gameView.initialize_players(players)
+        self.gameView.initialize_tanks(tanks)
         self.gameView.update_bullets([])
         
     def update_game(self, msg):

@@ -83,7 +83,7 @@ class OnlineLobbyPage:
                 struct.pack("B", nc.REMOVE_ROUND), (self.host, self.port))
 
     def send_to_server_msg_that_i_exist(self):
-        while self.info.online and not self.info.game_running:
+        while self.info.online:
             name = self.info.name.encode()
             name_length = len(name)
             try:

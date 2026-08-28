@@ -2,9 +2,11 @@ from tank.tank import Tank
 from bullet.bulletEngine import BulletEngine
 import math
 import pygame
+from player import Player
+
 
 class TankEngine(Tank):
-    def __init__(self, start_pos, angle, bullets, ticks_per_sec):
+    def __init__(self, start_pos, angle, bullets, ticks_per_sec, player: Player):
         super().__init__(start_pos, angle, bullets)
         self.ticks_per_sec = ticks_per_sec
         self.max_bullets = bullets
@@ -12,6 +14,7 @@ class TankEngine(Tank):
         self.reload_frames_limit = 1 * ticks_per_sec
         self.reload_frames_cooldown = 0
         self.cooldown_shoot_limit = 0.5 * ticks_per_sec
+        self.player = player
 
     def shoot(self):
         rad = math.radians(self.angle)
@@ -22,12 +25,11 @@ class TankEngine(Tank):
 
         spawn_pos = pygame.Vector2(bullet_x, bullet_y)
         
-        bullet = BulletEngine(spawn_pos, self.angle, self.ticks_per_sec)
+        bullet = BulletEngine(spawn_pos, self.angle, self.ticks_per_sec, self.player)
         self.bullets_left -= 1
         self.shoot_cooldown_frames = self.cooldown_shoot_limit
         return bullet
  
-    
     def is_able_to_shoot(self):
         if self.bullets_left > 0 and self.shoot_cooldown_frames == 0:
             return True

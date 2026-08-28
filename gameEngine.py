@@ -13,18 +13,18 @@ BULLET_SPEED = 90
 
 
 class GameEngine:
-    def __init__(self, players_names, ticks_per_sec):
+    def __init__(self, players, ticks_per_sec):
         self.ticks_per_sec = ticks_per_sec
         self.walls = []
-        self.players = {}
-        self.players_names = players_names
+        self.players = players
+        self.tanks = []
         self.bullets = []
         self.game_over = False
         self.choose_map()
 
     def is_finished(self):
         alive_count = 0
-        for tank in self.players.values():
+        for tank in self.tanks:
             if tank.is_alive():
                 alive_count += 1
         if alive_count < 2:
@@ -33,8 +33,14 @@ class GameEngine:
         else:
             return False
 
-    def update_player(self, player, w, a, s, d, shoot):
-        tank = self.players[player]
+    def get_tank(self, player):
+        for tank in self.tanks:
+            if tank.player == player:
+                return tank
+        return None
+
+    def update_tank(self, player, w, a, s, d, shoot):
+        tank = self.get_tank(player)
         if not tank.is_alive():
             return False
         old_angle = tank.angle
@@ -95,7 +101,7 @@ class GameEngine:
             bullet.position.x -= math.sin(rad)*BULLET_SPEED/self.ticks_per_sec
             bullet.position.y -= math.cos(rad)*BULLET_SPEED/self.ticks_per_sec
 
-    def get_players(self, binary=False):
+    def get_tanks(self, binary=False):
         if binary:
             buffor = struct.pack("B", len(self.players))
             for name, tank in self.players.items():
@@ -105,7 +111,7 @@ class GameEngine:
                 buffor += struct.pack("fffB", tank.position.x, tank.position.y,
                                       tank.angle, tank.bullets_left)
             return buffor
-        return self.players
+        return self.tanks
 
     def get_walls(self, binary=False):
         if binary:
@@ -172,13 +178,14 @@ class GameEngine:
     def get_winner(self):
         winner = None
         if self.game_over:
-            for player, tank in self.players.items():
+            for tank in self.tanks:
                 if tank.is_alive():
-                    winner = player
+                    winner = tank.player
         return winner
     
     def choose_map(self, map_filename=None):
         self.walls = []
+        self.tanks = []
         maps = ["maps/map1.txt", "maps/map2.txt", "maps/map3.txt"]
         if map_filename is None:
             map_filename = random.choice(maps)
@@ -190,10 +197,11 @@ class GameEngine:
         self.generate_players_on_map()
 
     def generate_players_on_map(self):
-        for name in self.players_names:
+        for player in self.players:
             start_pos = self.get_start_pos(WIDTH, HEIGHT)
-            self.players[name] = TankEngine(start_pos, random.randint(0, 360),
-                                            TANK_MAX_AMUNITION, self.ticks_per_sec)
+            self.tanks.append(TankEngine(start_pos, random.randint(0, 360),
+                                         TANK_MAX_AMUNITION, self.ticks_per_sec,
+                                         player))
 
     def reset(self):
         self.bullets = []

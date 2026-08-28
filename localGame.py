@@ -14,14 +14,11 @@ class LocalGame:
         self.number_of_players = n_players
         self.number_of_bots = n_bots
         self.number_of_rounds = n_rounds
-        self.players_names = []
         self.players = {}
         for i in range(self.number_of_players):
-            self.players[f"{PLAYER_NAMES[i]}"] = Player(f"{PLAYER_NAMES[i]}")
-            self.players_names.append(f"{PLAYER_NAMES[i]}")
+            self.players[f"{PLAYER_NAMES[i]}"] = (Player(f"{PLAYER_NAMES[i]}"))
         for i in range(self.number_of_bots):
-            self.players[f"bot{i}"] = BotPlayer(f"bot{i}")
-            self.players_names.append(f"bot{i}")
+            self.players[f"bot{i}"] = (BotPlayer(f"bot{i}"))
 
     def players_moves(self):
         keys = pygame.key.get_pressed()
@@ -81,36 +78,37 @@ class LocalGame:
                     next_tick += tick_duration
 
     def initialize_game(self):
-        self.gameEngine = GameEngine(self.players_names, self.ticks_per_sec)
-        self.gameEngine.choose_map("maps/map3.txt")
+        self.gameEngine = GameEngine(self.players.values(), self.ticks_per_sec)
+        self.gameEngine.choose_map("maps/map1.txt")
         walls = self.gameEngine.get_walls()
-        players = self.gameEngine.get_players()
+        tanks = self.gameEngine.get_tanks()
         self.gameView = GameView()
         self.gameView.update_walls(walls)
-        self.gameView.initialize_players_from_tank_engines(players)
+        self.gameView.initialize_tanks_from_tank_engines(tanks)
         
     def end_round(self):
         winner = self.gameEngine.get_winner()
-        self.players[winner].add_point()
-        for player, values in self.players.items():
-            print(f"player {player} has {values.points} points")
+        winner.add_point()
+        for player in self.players.values():
+            print(f"player {player.name} has {player.points} points")
 
     def game_logic(self):
         self.players_moves()
         self.bots_moves()
-        for name, tank in self.players.items():
-            instructions = tank.get_instructions()
-            self.gameEngine.update_player(
-                name, instructions["w"], instructions["a"],
+        for player in self.players.values():
+            instructions = player.get_instructions()
+            self.gameEngine.update_tank(
+                player, instructions["w"], instructions["a"],
                 instructions["s"], instructions["d"], instructions["shoot"])
         self.gameEngine.update_bullets()
 
     def update_view(self):
         bullets = self.gameEngine.get_bullets()
         self.gameView.update_bullets_from_bullet_engine(bullets)
-        players = self.gameEngine.get_players()
-        for name, tank_engine in players.items():
+        tanks = self.gameEngine.get_tanks()
+        for tank_engine in tanks:
+            name = tank_engine.player.name
             x, y = tank_engine.position.x, tank_engine.position.y
             angle, bullets = tank_engine.angle, tank_engine.bullets_left
             alive = tank_engine.alive
-            self.gameView.update_player(name, x, y, angle, bullets, alive)
+            self.gameView.update_tank(name, x, y, angle, bullets, alive)

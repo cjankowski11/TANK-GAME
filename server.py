@@ -21,7 +21,7 @@ class Server:
         self.start_game = False
         self.kill = False
         self.thread_count = 0
-        self.menu_players = {}
+        self.players = {}
         self.max_players = 4
         self.bots_number = 0
         self.rounds_number = 1
@@ -30,7 +30,6 @@ class Server:
         self.socket.bind((self.host, self.port))
         self.socket.settimeout(1)
         self.lock = threading.Lock()
-        self.players = {}
 
     def handle_data(self, data, addr):
         if len(data):
@@ -59,10 +58,10 @@ class Server:
     def check_ready_status_and_set_start(self):
         with self.lock:
             if (not self.start_game and
-               self.bots_number + self.get_menu_players_number() > 1):
-                self.start_game = (bool(self.menu_players) and all(p["ready"]
-                                   for p in self.menu_players.values()))
-                self.initialize_players()
+               self.bots_number + self.get_players_number() > 1):
+                self.start_game = (bool(self.players) and all(player.ready
+                                   for player in self.players.values()))
+                self.initialize_bots()
 
     def remove_round(self):
         with self.lock:
@@ -90,12 +89,15 @@ class Server:
         name_raw = struct.unpack(f"{name_length}s", data[2:name_length+2])[0]
         decoded_name = name_raw.decode()
         with self.lock:
-            all_players = self.get_menu_players_number() + self.bots_number
-            addrs = self.get_menu_players_addrs()
-            if all_players < 4 or addr in addrs:
-                self.menu_players[addr] = {"name": decoded_name,
-                                           "time": now,
-                                           "ready": ready_status}
+            all_players = self.get_players_number() + self.bots_number
+            addrs = self.get_players_addrs()
+            if all_players < 4 and addr not in addrs:
+                self.players.append(Player(decoded_name, ready_status, now))
+            if addr in addrs:
+                player = self.players[addr]
+                player.set_ready(ready_status)
+                player.set_last_active_time(now)
+                player.set_name(decoded_name)
 
     def validate_player_name(self, data, addr):
         name_is_used = False
@@ -104,7 +106,7 @@ class Server:
         new_name = new_name.decode()
         with self.lock:
             name_is_used = any(
-                player["name"] == new_name for player in self.menu_players
+                player.name == new_name for player in self.players
                 )
         self.socket.sendto(
             struct.pack("B?", nc.NAME_VALIDATION_RESPONSE, name_is_used), addr)
@@ -116,8 +118,7 @@ class Server:
     def update_player_instructions(self, data, addr):
         w, a, s, d, shoot = struct.unpack("BBBBB", data)
         with self.lock:
-            name = self.get_player_name(addr)
-            self.players[name].update(w, a, s, d, shoot)
+            self.players[addr].update(w, a, s, d, shoot)
 
     def listen_loop(self):
         self.thread_count += 1
@@ -146,7 +147,7 @@ class Server:
             
             with self.lock:
                 active_game = self.start_game
-                current_players = list(self.menu_players.keys())
+                current_players_addr = list(self.players.keys())
 
             if not active_game:
                 self.resending_active_players()
@@ -157,7 +158,7 @@ class Server:
                 continue
 
             if not start_msg_send:
-                for addr in current_players:
+                for addr in current_players_addr:
                     self.socket.sendto(struct.pack("B", nc.START_GAME), addr)
                     start_msg_send = True
 
@@ -177,16 +178,15 @@ class Server:
                     time.sleep(0.5)
 
                 next_tick = time.time() + tick_duration 
-
+            # dodac resetowanie zamiast tworzenia nowego obiektu(gmaeengine)
             if now >= next_tick:
                 if self.gameEngine.is_finished():
                     game_initialized = False
                     self.add_point_for_the_winner()
                     if current_round == self.rounds_number:
-                        for addr in current_players:
+                        for addr in current_players_addr:
                             self.socket.sendto(struct.pack("B", nc.END_GAME), addr)
                         with self.lock:
-                            self.menu_players = {}
                             self.players = {}
                         start_msg_send = False
                         
@@ -215,47 +215,44 @@ class Server:
 
     def add_point_for_the_winner(self):
         winner = self.gameEngine.get_winner()
-        self.players[winner].add_point()
-        for player, values in self.players.items():
-            print(f"player {player} has {values.points} points")
+        winner.add_point()
+        for player in self.players.values():
+            print(f"player {player.name} has {player.points} points")
 
     def delete_not_active(self):
         addr_to_delete = []
-        for addr, _ in self.menu_players.items():
-            if time.time() - self.menu_players[addr]["time"] > 5:
+        for addr, _ in self.players.items():
+            if time.time() - self.players[addr].last_active_time > 5:
                 addr_to_delete.append(addr)
         for addr in addr_to_delete:
-            self.menu_players.pop(addr)
+            self.players.pop(addr)
 
-    def get_menu_players_number(self):
-        return len(self.menu_players)
+    def get_players_number(self):
+        return len(self.players)
     
-    def get_menu_players_addrs(self):
-        return list(self.menu_players.keys())
-
-    def get_menu_players_values(self):
-        return list(self.menu_players.values())
+    def get_players_addrs(self):
+        return list(self.players.keys())
 
     def get_players(self):
         return list(self.players.values())
     
     def get_player_name(self, addr):
-        return self.menu_players[addr]["name"]
+        return self.menu_players[addr].name
     
     def resending_active_players(self):
         with self.lock:
             self.delete_not_active()
-            current_players = self.get_menu_players_values()
-            num_players = self.get_menu_players_number()
+            current_players = self.get_players()
+            num_players = self.get_players_number()
             current_bots = self.bots_number
             rounds = self.rounds_number
         buffor = struct.pack("BBBB", nc.ACTIVE_PLAYERS, num_players, current_bots, rounds)
-        for value in current_players:
-            encoded_name = value["name"].encode()
+        for player in current_players:
+            encoded_name = player.name.encode()
             name_length = len(encoded_name)
-            buffor += struct.pack(f"B?{name_length}s", name_length, value["ready"], encoded_name)
+            buffor += struct.pack(f"B?{name_length}s", name_length, player.ready, encoded_name)
         with self.lock:
-            addrs = self.get_menu_players_addrs()
+            addrs = self.get_players_addrs()
 
         for addr in addrs:
             try:
@@ -264,19 +261,14 @@ class Server:
                 print(e)
             
     def initialize_game(self, tps):
-        names = []
         with self.lock:
-            # players = self.get_players()
-            for name, player in self.players.items():
-                names.append(name)
+            players = self.get_players()
+            for player in players:
                 player.alive = True
 
-        self.gameEngine = GameEngine(names, tps)
+        self.gameEngine = GameEngine(players, tps)
                 
-    def initialize_players(self):
-        for value in self.menu_players.values():
-            name = value["name"]
-            self.players[name] = Player(name)
+    def initialize_bots(self):
         for i in range(self.bots_number):
             bot_name = f"BOT{i}"
             self.players[bot_name] = BotPlayer(bot_name)
@@ -295,7 +287,7 @@ class Server:
             for player in players:
                 instructions = player.get_instructions()
                 name = player.name
-                self.gameEngine.update_player(
+                self.gameEngine.update_tank(
                     name, instructions["w"], instructions["a"],
                     instructions["s"], instructions["d"],
                     instructions["shoot"])
@@ -307,7 +299,7 @@ class Server:
         msg = struct.pack("B", nc.PLAYERS_AND_BULLETS) + players + bullets
 
         with self.lock:
-            addrs = self.get_menu_players_addrs()
+            addrs = self.get_players_addrs()
         for addr in addrs:
             self.socket.sendto(msg, addr)
 
@@ -316,17 +308,17 @@ class Server:
         players = self.gameEngine.get_players(binary=True)
         msg = struct.pack("B", nc.STARTING_WALLS_AND_PLAYERS) + walls + players
         with self.lock:
-            addrs = self.get_menu_players_addrs()
+            addrs = self.get_players_addrs()
         for addr in addrs:
             self.socket.sendto(msg, addr)
     
-    def update_bot_walls(self):
-        with self.lock:
-            players = self.get_players()
-        walls = self.gameEngine.get_walls()
-        for player in players:
-            if player.is_bot():
-                player.update_walls(walls)
+    # def update_bot_walls(self):
+    #     with self.lock:
+    #         players = self.get_players()
+    #     walls = self.gameEngine.get_walls()
+    #     for player in players:
+    #         if player.is_bot():
+    #             player.update_walls(walls)
 
 
 server = Server(server_ip, int(port))

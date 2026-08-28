@@ -1,13 +1,16 @@
 import random
 import pygame
+from dqn import DQN
+import torch
 # import stable_baselines3
 
 
 class Player:
-    def __init__(self, name="player"):
+    def __init__(self, name="player", ready_status=None, lta=None):
         self.name = name
         self.points = 0
-        self.alive = True
+        self.ready = ready_status
+        self.last_time_active = lta
         self.active_instructions = {
             "w": False, "a": False, "s": False,
             "d": False, "shoot": False}
@@ -25,29 +28,30 @@ class Player:
     def add_point(self):
         self.points += 1
 
+    def set_ready_status(self, ready_status):
+        self.ready = ready_status
+
+    def set_last_active_time(self, lta):
+        self.last_time_active = lta
+
+    def set_name(self, name):
+        self.name = name
+
 
 class BotPlayer(Player):
-    def __init__(self, name="bot"):
+    def __init__(self, name="bot", neural_network=None):
         super().__init__(name)
         self.walls = []
         self.bullets = []
         self.players = {}
+        self.nn = neural_network
 
-    def update(self):
-        self.active_instructions = {"w": random.choice([True, False]),
-                                    "a": random.choice([True, False]),
-                                    "s": random.choice([True, False]),
-                                    "d": random.choice([True, False]),
-                                    "shoot": random.choice([True, False])}
-
+    def get_action(self, state):
+        state = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
+        q_values = self.nn.forward(state)
+        action = torch.argmax(q_values, dim=1).item()
+        return action
+    
     def is_bot(self):
         return True
 
-    def update_walls(self, walls):
-        self.walls = walls
-
-    def update_players(self, players):
-        self.players = players
-
-    def update_bullets(self, bullets):
-        self.bullets = bullets
